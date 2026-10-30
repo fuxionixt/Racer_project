@@ -21,15 +21,16 @@ def clean(df: pd.DataFrame) -> pd.DataFrame:
     # Scheme names are truncated, so different variants share a name; give each row an id.
     df.insert(0, "fund_id", range(len(df)))
 
-    # Closed-ended fixed term / fixed maturity plans can't take new money.
-    df["is_closed_ended"] = df["scheme_name"].str.contains(r"\b(?:FTP|FMP)\b", regex=True)
-
-    # 0 means "not rated" / "not offered" / "not reported", not a real value.
-    for col in ["rating", "min_sip", "min_lumpsum", "expense_ratio"]:
-        df[col] = df[col].replace(0, np.nan)
-
     for col in ["scheme_name", "fund_manager", "amc_name", "category", "sub_category"]:
         df[col] = df[col].str.strip()
+
+    # Closed-ended fixed term / fixed maturity plans can't take new money.
+    df["is_closed_ended"] = df["scheme_name"].str.contains(r"\b(?:FTP|FMP)\b", regex=True, na=False)
+
+    # 0 means "not rated" / "not offered" / "not reported", not a real value.
+    # Note: NaN fails any >= / <= comparison, so downstream rule checks must handle it explicitly.
+    for col in ["rating", "min_sip", "min_lumpsum", "expense_ratio"]:
+        df[col] = df[col].replace(0, np.nan)
 
     # returns_3yr / returns_5yr stay NaN: the fund is younger than the period.
     return df

@@ -6,3 +6,7 @@ __pycache__/
 data/processed/
 data/raw/
 figures/
+racer_code/racer/data/
+racer_code/racer/paper/
+racer_code/racer/CHANGES.md
+racer_code/racer/results/exp1_*

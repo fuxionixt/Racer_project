@@ -1,6 +1,7 @@
-"""Redraw paper Figs. 6 and 8 from results/cce_results.json and the reported classifier results.
+"""Redraw paper Figs. 4, 6 and 8 from experiment results.
 
-Run evaluate_cce.py first. Writes PNGs to figures/.
+Run evaluate_cce.py, racer_code/racer/experiments/exp1_finqa_retrieval.py and
+exp4_generation_hallucination.py first. Writes PNGs to figures/.
 """
 
 import json
@@ -12,23 +13,21 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 ROOT = Path(__file__).resolve().parent
-RESULTS_PATH = ROOT / "results" / "cce_results.json"
+CCE_PATH = ROOT / "results" / "cce_results.json"
+FINQA_PATH = ROOT / "racer_code" / "racer" / "results" / "exp1_finqa_test.json"
+GEN_PATH = ROOT / "racer_code" / "racer" / "results" / "exp4_anthropic.json"
 OUT_DIR = ROOT / "figures"
 
 PURPLE, GREEN, TEAL, ORANGE, GREY = "#5349b7", "#1d9e75", "#2196a8", "#d95b33", "#8a8a8a"
 LIGHT = {PURPLE: "#9b93e0", GREEN: "#5bbf98", TEAL: "#63b4c0", ORANGE: "#e8a088"}
 
-# Classifier results as reported in the paper (Tables IV-VI); not recomputed here.
+# (key in exp1 results, label, colour)
+RETRIEVERS = [("random", "Random", GREY), ("tfidf", "TF-IDF (RACER)", PURPLE),
+              ("bm25", "BM25", TEAL), ("hybrid_rrf", "Hybrid RRF", GREEN)]
+
+# Classifier results as reported in the paper (Tables V-VI); not recomputed here.
 D2_RF = {"Train": 90.49, "Test": 91.18, "CV": 86.24, "CV_SD": 2.80}
 D3_RF = {"Train": 89.33, "Test": 83.60, "CV": 82.70, "CV_SD": 2.32}
-D1_TEST = {  # Keyword Matching, Standard RAG, RACER
-    "Recall@K\n(%)": (0.0, 1.0, 6.0),
-    "Compliance\n(%)": (0.0, 100.0, 100.0),
-    "MRR\n(×100)": (0.0, 1.0, 3.1),
-    "Exact\nMatch (%)": (1.0, 1.0, 2.0),
-}
-D1_DEV_COMPLIANCE = (95.0, 5.0)
-D1_TEST_COMPLIANCE = 100.0
 
 plt.rcParams.update({
     "font.family": "serif", "font.size": 11, "axes.spines.top": False, "axes.spines.right": False,
@@ -51,6 +50,35 @@ def rf_bars(ax, res, x0, color_set):
     return xs
 
 
+def retriever_bars(ax, summary, metric, scale=100, fmt="{:.1f}"):
+    """Bars with 95% bootstrap CIs for each retriever on one metric."""
+    for i, (key, label, color) in enumerate(RETRIEVERS):
+        m = summary[key][metric]
+        ax.bar(i, scale * m["mean"], width=0.6, color=color, label=label)
+        ax.errorbar(i, scale * m["mean"], yerr=[[scale * (m["mean"] - m["lo"])], [scale * (m["hi"] - m["mean"])]],
+                    color="#222", capsize=6, lw=1.2)
+        ax.annotate(fmt.format(scale * m["mean"]), (i, scale * m["hi"]), xytext=(0, 3), textcoords="offset points",
+                    ha="center", va="bottom", fontsize=9, fontweight="bold")
+    ax.set_xticks(range(len(RETRIEVERS)), [label.replace(" (", "\n(") for _, label, _ in RETRIEVERS])
+
+
+def fig4(finqa):
+    closed, opened = finqa["modes"]["closed"]["summary"], finqa["modes"]["open"]["summary"]
+    fig, axes = plt.subplots(1, 3, figsize=(20, 6.6))
+    fig.suptitle(f"RACER — FinQA Supporting-Fact Retrieval (Test Set, N = {finqa['n_questions']:,})",
+                 fontweight="bold", fontsize=16)
+    panels = [(closed, "recall@5", "(a) Recall@5 — Closed Pool\n(facts of the question's own filing)", "Recall@5 (%)"),
+              (opened, "recall@5", f"(b) Recall@5 — Open Corpus\n(all {finqa['n_facts']:,} test-split facts)", "Recall@5 (%)"),
+              (opened, "mrr", "(c) MRR — Open Corpus", "MRR (×100)")]
+    for ax, (summary, metric, title, ylabel) in zip(axes, panels):
+        retriever_bars(ax, summary, metric)
+        ax.set_ylim(0, 100)
+        ax.set_ylabel(ylabel)
+        ax.set_title(title, fontweight="bold")
+    fig.tight_layout(rect=(0, 0, 1, 0.93))
+    fig.savefig(OUT_DIR / "fig4_finqa.png", dpi=200)
+
+
 def fig6(cce):
     t5 = cce["theta_5"]
     fig, axes = plt.subplots(1, 3, figsize=(20, 6.8))
@@ -61,7 +89,7 @@ def fig6(cce):
     ax.set_xticks(xs, ["Train", "Test", "CV (5-fold)"])
     ax.set_ylim(70, 100)
     ax.set_ylabel("Score (%)")
-    ax.set_title("(a) RF Classifier Performance", fontweight="bold")
+    ax.set_title("(a) Supporting RF Classifier Performance", fontweight="bold")
 
     ax = axes[1]
     tiers = ["LOW", "MEDIUM", "HIGH"]
@@ -69,8 +97,8 @@ def fig6(cce):
     comp = [100 * t5["per_tier"][t]["compliance"] for t in tiers]
     rej = [100 - c for c in comp]
     xs = range(len(tiers))
-    b1 = ax.bar([x - 0.18 for x in xs], comp, width=0.34, color=colors, label="Compliant %")
-    b2 = ax.bar([x + 0.18 for x in xs], rej, width=0.34, color=[LIGHT[c] for c in colors], label="Rejected %")
+    b1 = ax.bar([x - 0.18 for x in xs], comp, width=0.34, color=colors)
+    b2 = ax.bar([x + 0.18 for x in xs], rej, width=0.34, color=[LIGHT[c] for c in colors])
     label_bars(ax, b1)
     label_bars(ax, b2)
     ax.set_xticks(list(xs), [f"{t}\nRisk (n={t5['per_tier'][t]['n']})" for t in tiers])
@@ -93,7 +121,7 @@ def fig6(cce):
     fig.savefig(OUT_DIR / "fig6_mutualfunds.png", dpi=200)
 
 
-def fig8(cce):
+def fig8(cce, finqa, gen):
     t5 = cce["theta_5"]
     fig, axes = plt.subplots(1, 3, figsize=(20, 7.4))
     fig.suptitle("RACER Framework — Combined Results Across All Datasets", fontweight="bold", fontsize=16)
@@ -110,40 +138,35 @@ def fig8(cce):
     ax.set_title("(a) RF Classifier Accuracy\nDatasets 2 & 3", fontweight="bold")
 
     ax = axes[1]
-    comp = [D1_DEV_COMPLIANCE[0], D1_TEST_COMPLIANCE, 100 * t5["compliance"]]
-    rej = [D1_DEV_COMPLIANCE[1], None, 100 * t5["rejection_rate"]]
-    b1 = ax.bar([x - 0.18 for x in range(3)], comp, width=0.34, color=[PURPLE, GREEN, TEAL], label="Compliant %")
-    label_bars(ax, b1)
-    rx = [x + 0.18 for x, r in zip(range(3), rej) if r is not None]
-    b2 = ax.bar(rx, [r for r in rej if r is not None], width=0.34, color=LIGHT[ORANGE], label="Rejected %")
-    label_bars(ax, b2)
-    ax.set_xticks(range(3), ["D1\nDev", "D1\nTest", f"D2\nFunds (n={t5['n_evaluated']})"])
-    ax.set_ylim(0, 118)
-    ax.set_ylabel("Percentage (%)")
-    ax.set_title("(b) CCE Compliance\nDatasets 1 & 2", fontweight="bold")
-    ax.legend(loc="upper right")
+    retriever_bars(ax, finqa["modes"]["open"]["summary"], "recall@5")
+    ax.set_ylim(0, 100)
+    ax.set_ylabel("Recall@5 (%)")
+    ax.set_title("(b) FinQA Retrieval, Open Corpus\nDataset 1 (Test Set)", fontweight="bold")
 
     ax = axes[2]
-    names = ["Keyword Matching", "Standard RAG", "RACER (Proposed)"]
-    for i, (name, color) in enumerate(zip(names, [GREY, TEAL, PURPLE])):
-        vals = [v[i] for v in D1_TEST.values()]
-        bars = ax.bar([x + (i - 1) * 0.26 for x in range(len(D1_TEST))], vals, width=0.26, color=color, label=name)
-        label_bars(ax, bars, fmt="{:.1f}", size=8)
-    ax.set_xticks(range(len(D1_TEST)), list(D1_TEST))
-    ax.set_ylim(0, 120)
-    ax.set_ylabel("Score (%)")
-    ax.set_title("(c) RACER vs Baselines\nDataset 1 (Test Set, N = 100)", fontweight="bold")
-    ax.legend(loc="upper right")
+    variants = list(gen["variants"].values())
+    vals = [100 * (1 - t5["compliance"]), 100 * variants[0]["has_hallucination"]["mean"],
+            100 * variants[1]["has_hallucination"]["mean"]]
+    bars = ax.bar(range(3), vals, width=0.55, color=[ORANGE, LIGHT[ORANGE], PURPLE])
+    label_bars(ax, bars)
+    ax.set_xticks(range(3), [f"CCE rejection\n(D2, n={t5['n_evaluated']})",
+                             f"Hallucinated\nno validator (n={gen['n']})", f"Hallucinated\nwith validator (n={gen['n']})"])
+    ax.set_ylim(0, 40)
+    ax.set_ylabel("Percentage (%)")
+    ax.set_title("(c) Compliance Filtering and Validation\nDataset 2", fontweight="bold")
 
     fig.tight_layout(rect=(0, 0, 1, 0.93))
     fig.savefig(OUT_DIR / "fig8_combined.png", dpi=200)
 
 
 def main() -> None:
-    cce = json.loads(RESULTS_PATH.read_text())
+    cce = json.loads(CCE_PATH.read_text())
+    finqa = json.loads(FINQA_PATH.read_text())
+    gen = json.loads(GEN_PATH.read_text())
     OUT_DIR.mkdir(exist_ok=True)
+    fig4(finqa)
     fig6(cce)
-    fig8(cce)
+    fig8(cce, finqa, gen)
     print(f"Saved figures to {OUT_DIR.relative_to(ROOT)}/")
 
 

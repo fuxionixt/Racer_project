@@ -1,0 +1,47 @@
+{
+  "n_train": 610,
+  "n_test": 204,
+  "n_excluded_missing": 38,
+  "theta_5": {
+    "theta": 5,
+    "n_evaluated": 166,
+    "n_rejected": 25,
+    "compliance": 0.8493975903614458,
+    "rejection_rate": 0.1506024096385542,
+    "per_tier": {
+      "LOW": {
+        "n": 40,
+        "compliance": 0.575
+      },
+      "MEDIUM": {
+        "n": 42,
+        "compliance": 0.8333333333333334
+      },
+      "HIGH": {
+        "n": 84,
+        "compliance": 0.9880952380952381
+      }
+    }
+  },
+  "theta_4": {
+    "theta": 4,
+    "n_evaluated": 166,
+    "n_rejected": 8,
+    "compliance": 0.9518072289156626,
+    "rejection_rate": 0.048192771084337394,
+    "per_tier": {
+      "LOW": {
+        "n": 40,
+        "compliance": 0.8
+      },
+      "MEDIUM": {
+        "n": 42,
+        "compliance": 1.0
+      },
+      "HIGH": {
+        "n": 84,
+        "compliance": 1.0
+      }
+    }
+  }
+}

@@ -1,7 +1,7 @@
 """Redraw paper Figs. 4, 6 and 8 from experiment results.
 
-Run evaluate_cce.py, racer_code/racer/experiments/exp1_finqa_retrieval.py and
-exp4_generation_hallucination.py first. Writes PNGs to figures/.
+Run evaluate_cce.py, evaluate_profiling.py, racer_code/racer/experiments/exp1_finqa_retrieval.py
+and exp4_generation_hallucination.py first. Writes PNGs to figures/.
 """
 
 import json
@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 
 ROOT = Path(__file__).resolve().parent
 CCE_PATH = ROOT / "results" / "cce_results.json"
+PROFILING_PATH = ROOT / "results" / "profiling_results.json"
 FINQA_PATH = ROOT / "racer_code" / "racer" / "results" / "exp1_finqa_test.json"
 GEN_PATH = ROOT / "racer_code" / "racer" / "results" / "exp4_anthropic.json"
 OUT_DIR = ROOT / "figures"
@@ -25,9 +26,8 @@ LIGHT = {PURPLE: "#9b93e0", GREEN: "#5bbf98", TEAL: "#63b4c0", ORANGE: "#e8a088"
 RETRIEVERS = [("random", "Random", GREY), ("tfidf", "TF-IDF (RACER)", PURPLE),
               ("bm25", "BM25", TEAL), ("hybrid_rrf", "Hybrid RRF", GREEN)]
 
-# Classifier results as reported in the paper (Tables V-VI); not recomputed here.
+# D2 fund-risk classifier as reported in the paper (Table V); not recomputed here.
 D2_RF = {"Train": 90.49, "Test": 91.18, "CV": 86.24, "CV_SD": 2.80}
-D3_RF = {"Train": 89.33, "Test": 83.60, "CV": 82.70, "CV_SD": 2.32}
 
 plt.rcParams.update({
     "font.family": "serif", "font.size": 11, "axes.spines.top": False, "axes.spines.right": False,
@@ -121,14 +121,99 @@ def fig6(cce):
     fig.savefig(OUT_DIR / "fig6_mutualfunds.png", dpi=200)
 
 
-def fig8(cce, finqa, gen):
+def d3_rf(prof):
+    rf = prof["models"]["random_forest"]
+    return {"Train": 100 * rf["train_accuracy"], "Test": 100 * rf["test_accuracy"],
+            "CV": 100 * rf["cv_mean"], "CV_SD": 100 * rf["cv_sd"]}
+
+
+def fig7(prof):
+    models = prof["models"]
+    rf = models["random_forest"]
+    fig, axes = plt.subplots(2, 3, figsize=(20, 12.4))
+    fig.suptitle(f"RACER — User Financial Risk Profiling (Test Set, N = {prof['n_test']})",
+                 fontweight="bold", fontsize=16)
+
+    ax = axes[0, 0]
+    tiers = prof["confusion_labels"]
+    counts = [round(prof["n"] * prof["label_distribution"][t]) for t in tiers]
+    bars = ax.bar(tiers, counts, width=0.55, color=[GREEN, PURPLE, ORANGE])
+    label_bars(ax, bars, fmt="{:.0f}", size=10)
+    ax.set_ylabel("Users")
+    ax.set_title("(a) Risk Label Distribution", fontweight="bold")
+
+    ax = axes[0, 1]
+    imp = sorted(prof["rf_feature_importance"].items(), key=lambda kv: kv[1])
+    bars = ax.barh([k for k, _ in imp], [v for _, v in imp], color=PURPLE)
+    for b in bars:
+        ax.annotate(f"{b.get_width():.3f}", (b.get_width(), b.get_y() + b.get_height() / 2), xytext=(3, 0),
+                    textcoords="offset points", va="center", fontsize=9)
+    ax.set_xlabel("Importance")
+    ax.grid(axis="x", linestyle="--", alpha=0.5)
+    ax.set_title("(b) RF Feature Importances", fontweight="bold")
+
+    ax = axes[0, 2]
+    xs = rf_bars(ax, d3_rf(prof), 0, [PURPLE, GREEN, TEAL])
+    ax.set_xticks(xs, ["Train", "Test", "CV (5-fold)"])
+    ax.set_ylim(70, 100)
+    ax.set_ylabel("Accuracy (%)")
+    ax.set_title("(c) Train / Test / CV Accuracy", fontweight="bold")
+
+    ax = axes[1, 0]
+    cm = rf["confusion"]
+    ax.imshow(cm, cmap="Blues")
+    ax.grid(False)
+    for i, row in enumerate(cm):
+        for j, v in enumerate(row):
+            ax.text(j, i, v, ha="center", va="center", fontsize=13, fontweight="bold",
+                    color="white" if v > max(map(max, cm)) / 2 else "#222")
+    ax.set_xticks(range(3), tiers)
+    ax.set_yticks(range(3), tiers)
+    ax.set_xlabel("Predicted")
+    ax.set_ylabel("True")
+    ax.set_title("(d) RF Confusion Matrix", fontweight="bold")
+
+    ax = axes[1, 1]
+    names = [("random_stratified", "Random\nBaseline", GREY), ("logistic_regression", "Logistic\nRegression", TEAL),
+             ("random_forest", "RACER RF", PURPLE)]
+    for i, (key, _, color) in enumerate(names):
+        m = models[key]
+        lo, hi = m["test_accuracy_ci"]
+        b1 = ax.bar(i - 0.18, 100 * m["test_accuracy"], width=0.34, color=color)
+        ax.errorbar(i - 0.18, 100 * m["test_accuracy"], yerr=[[100 * (m["test_accuracy"] - lo)], [100 * (hi - m["test_accuracy"])]],
+                    color="#222", capsize=5, lw=1.2)
+        b2 = ax.bar(i + 0.18, 100 * m["f1_macro"], width=0.34, color=LIGHT.get(color, "#bbb"))
+        label_bars(ax, b2)
+        ax.annotate(f"{100 * m['test_accuracy']:.1f}", (i - 0.18, 100 * hi), xytext=(0, 2), textcoords="offset points",
+                    ha="center", va="bottom", fontsize=9, fontweight="bold")
+    ax.set_xticks(range(3), [n for _, n, _ in names])
+    ax.set_ylim(0, 125)
+    ax.set_ylabel("Score (%)")
+    handles = [plt.Rectangle((0, 0), 1, 1, color="#555"), plt.Rectangle((0, 0), 1, 1, color="#bbb")]
+    ax.legend(handles, ["Test accuracy (95% CI)", "F1 macro"], loc="upper left", ncol=2)
+    ax.set_title("(e) Model Comparison", fontweight="bold")
+
+    ax = axes[1, 2]
+    vals = [rf["test_accuracy"], rf["f1_macro"], rf["precision_macro"], rf["recall_macro"], rf["cv_mean"]]
+    bars = ax.bar(range(5), [100 * v for v in vals], width=0.55, color=[PURPLE, GREEN, TEAL, ORANGE, GREY])
+    label_bars(ax, bars)
+    ax.set_xticks(range(5), ["Test\nAccuracy", "F1\nMacro", "Precision\nMacro", "Recall\nMacro", "CV\nAccuracy"])
+    ax.set_ylim(70, 100)
+    ax.set_ylabel("Score (%)")
+    ax.set_title("(f) RACER RF — All Metrics", fontweight="bold")
+
+    fig.tight_layout(rect=(0, 0, 1, 0.95))
+    fig.savefig(OUT_DIR / "fig7_profiling.png", dpi=200)
+
+
+def fig8(cce, finqa, gen, prof):
     t5 = cce["theta_5"]
     fig, axes = plt.subplots(1, 3, figsize=(20, 7.4))
     fig.suptitle("RACER Framework — Combined Results Across All Datasets", fontweight="bold", fontsize=16)
 
     ax = axes[0]
     xs2 = rf_bars(ax, D2_RF, 0, [PURPLE, GREEN, TEAL])
-    xs3 = rf_bars(ax, D3_RF, 3, [LIGHT[PURPLE], LIGHT[GREEN], LIGHT[TEAL]])
+    xs3 = rf_bars(ax, d3_rf(prof), 3, [LIGHT[PURPLE], LIGHT[GREEN], LIGHT[TEAL]])
     ax.axvline(2.5, color="#bbb", ls="--")
     ax.text(1, 97, "Dataset 2", ha="center", style="italic", color=PURPLE)
     ax.text(4, 97, "Dataset 3", ha="center", style="italic", color=PURPLE)
@@ -163,10 +248,12 @@ def main() -> None:
     cce = json.loads(CCE_PATH.read_text())
     finqa = json.loads(FINQA_PATH.read_text())
     gen = json.loads(GEN_PATH.read_text())
+    prof = json.loads(PROFILING_PATH.read_text())
     OUT_DIR.mkdir(exist_ok=True)
     fig4(finqa)
     fig6(cce)
-    fig8(cce, finqa, gen)
+    fig7(prof)
+    fig8(cce, finqa, gen, prof)
     print(f"Saved figures to {OUT_DIR.relative_to(ROOT)}/")
 
 

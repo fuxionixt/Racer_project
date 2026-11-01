@@ -26,6 +26,7 @@ python -c "import kagglehub, shutil; p = kagglehub.dataset_download('berkereryil
 
 ```bash
 python evaluate_cce.py         # suitability filtering on Mutual Funds India -> results/cce_results.json
+python evaluate_fund_risk.py   # risk_level leakage check on Mutual Funds India -> results/fund_risk_results.json
 python evaluate_profiling.py   # user risk profiling on Financial Risk Dataset -> results/profiling_results.json
 python make_figures.py         # paper Figs. 4, 6, 7 and 8 -> figures/
 ```

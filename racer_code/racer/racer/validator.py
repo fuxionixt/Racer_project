@@ -7,6 +7,15 @@ from dataclasses import dataclass, field
 _NUM = re.compile(r"(?<![\w.])-?\d+(?:\.\d+)?(?:%)?")
 _CITE_P = re.compile(r"\[P(\d+)\]")
 _CITE_R = re.compile(r"\[R(\d+)\]")
+_LIST_MARKER = re.compile(r"(?m)^[ \t]*(?:[-*>#]+[ \t]*)*\**\d+[.)]\**(?=\s)")
+_TABLE_RANK = re.compile(r"(?m)^[ \t]*\|[ \t]*\**\d+\**[ \t]*(?=\|)")  # "| 1 | Fund ..." rank column
+
+
+def _norm(s: str) -> str:
+    """Catalogue names mix '-', en/em dashes and '&' with irregular spacing; compare them in one form."""
+    s = re.sub(r"[ \t]*[-–—](?![ \t]*\d)[ \t]*", " - ", s)  # leave "-0.3" and "1-5" intact
+    s = re.sub(r"[ \t]*&[ \t]*", " & ", s)
+    return re.sub(r"[ \t]+", " ", s)
 _FUNDISH = re.compile(r"\b(?:[A-Z][\w&\-]*\s){1,5}(?:Fund|Scheme|Plan|ETF)\b")
 
 
@@ -34,8 +43,8 @@ def _numbers(text: str) -> list[float]:
 def validate(text: str, ctx: dict, catalogue_names=(), rules=None, products_df=None) -> Report:
     """ctx = {tier, products:[{name,...}], clauses:[{text,...}]}."""
     issues = []
-    allowed = sorted({p["name"].lower() for p in ctx["products"]}, key=len, reverse=True)
-    work = text
+    allowed = sorted({_norm(p["name"]).lower() for p in ctx["products"]}, key=len, reverse=True)
+    work = _norm(text)
 
     def mask(names):
         """Remove whole-token occurrences of names (longest first) so substrings are not double counted."""
@@ -50,7 +59,7 @@ def validate(text: str, ctx: dict, catalogue_names=(), rules=None, products_df=N
 
     # 1. product grounding: catalogue names used but not retrieved, and invented fund-like names
     mentioned = mask(allowed)
-    others = sorted({n.lower() for n in catalogue_names} - set(allowed), key=len, reverse=True)
+    others = sorted({_norm(n).lower() for n in catalogue_names} - set(allowed), key=len, reverse=True)
     outside = mask(others)
     inv = []
     for m in _FUNDISH.findall(work):
@@ -75,13 +84,14 @@ def validate(text: str, ctx: dict, catalogue_names=(), rules=None, products_df=N
 
     # 3. numeric grounding: every number must occur in the context (ignoring citation indices)
     body = _CITE_P.sub("", _CITE_R.sub("", work.replace("\x00", " ")))
+    body = _TABLE_RANK.sub("|", _LIST_MARKER.sub(" ", body))  # list enumerators and rank cells are formatting
     ctx_nums = []
     for p in ctx["products"]:
         for v in p.values():
             if isinstance(v, (int, float)):
                 ctx_nums.append(float(v))
     for c in ctx["clauses"]:
-        ctx_nums += _numbers(c["text"])
+        ctx_nums += _numbers(c["text"]) + _numbers(c.get("source", ""))  # the prompt shows both
     nums = _numbers(body)
     ungrounded = [n for n in nums if not any(abs(n - c) <= 1e-6 + 0.005 * abs(c) for c in ctx_nums)]
     num_ground = 1.0 if not nums else 1 - len(ungrounded) / len(nums)
@@ -92,7 +102,7 @@ def validate(text: str, ctx: dict, catalogue_names=(), rules=None, products_df=N
     viol = 0
     if rules is not None and products_df is not None:
         for a in mentioned:
-            row = products_df[products_df["scheme_name"].str.lower() == a]
+            row = products_df[products_df["scheme_name"].map(lambda n: _norm(n).lower()) == a]
             if len(row):
                 good, r = rules.passes(row.iloc[0], ctx["tier"])
                 if not good:

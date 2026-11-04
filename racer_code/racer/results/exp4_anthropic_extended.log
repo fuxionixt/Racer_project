@@ -1,0 +1,3 @@
+no validator                           {'has_hallucination': 0.062, 'product_grounding': 0.998, 'citation_validity': 1.0, 'numeric_grounding': 0.988, 'attempts': 1.0}
+with validator (<=2 regenerations)     {'has_hallucination': 0.0, 'product_grounding': 1.0, 'citation_validity': 1.0, 'numeric_grounding': 1.0, 'attempts': 1.042}
+wrote /Users/fuxionist/Documents/Racer_project/racer_code/racer/results/exp4_anthropic_extended.json

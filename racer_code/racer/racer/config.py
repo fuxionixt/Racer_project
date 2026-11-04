@@ -15,6 +15,9 @@ TFIDF_NGRAM = (1, 2)
 BM25_K1 = 1.5
 BM25_B = 0.75
 RRF_K = 60
+DENSE_MODEL = "BAAI/bge-small-en-v1.5"
+DENSE_QUERY_PREFIX = "Represent this sentence for searching relevant passages: "  # bge query instruction
+CLAUSE_RETRIEVER = "dense"  # regulatory-clause index; products stay on BM25
 
 # ---- statistics ------------------------------------------------------------
 BOOTSTRAP_REPS = 2000

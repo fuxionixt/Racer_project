@@ -8,7 +8,7 @@ import pandas as pd
 
 from . import config
 from .generator import ExtractiveGenerator, build_prompt
-from .retrieval import BM25Retriever, TfidfRetriever
+from .retrieval import BM25Retriever, DenseRetriever, TfidfRetriever
 from .rules import RuleTable
 from .validator import validate
 
@@ -41,7 +41,8 @@ class Result:
 
 class Racer:
     def __init__(self, funds_train: pd.DataFrame, funds_all: pd.DataFrame, clauses: list[dict] | None = None,
-                 generator=None, retriever: str = "bm25", options: Options | None = None):
+                 generator=None, retriever: str = "bm25", clause_retriever: str = config.CLAUSE_RETRIEVER,
+                 options: Options | None = None):
         self.o = options or Options()
         self.funds = funds_all.reset_index(drop=True)
         self.rules = RuleTable().fit(funds_train)
@@ -50,7 +51,8 @@ class Racer:
         self.fr = R().fit([fund_doc(r) for _, r in funds_train.iterrows()]).index(docs)
         self.clauses = clauses or []
         if self.clauses:
-            self.cr = R().fit([c["text"] for c in self.clauses]).index([c["text"] for c in self.clauses])
+            CR = {"bm25": BM25Retriever, "tfidf": TfidfRetriever, "dense": DenseRetriever}[clause_retriever]
+            self.cr = CR().fit([c["text"] for c in self.clauses]).index([c["text"] for c in self.clauses])
         self.gen = generator or ExtractiveGenerator()
         self.names = list(self.funds["scheme_name"])
 

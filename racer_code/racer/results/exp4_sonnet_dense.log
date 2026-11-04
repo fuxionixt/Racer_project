@@ -1,0 +1,7 @@
+W1103 19:07:47.222000 19709 torch/distributed/elastic/multiprocessing/redirects.py:35] NOTE: Redirects are currently not supported in MacOs.
+Loading weights:   0%|          | 0/199 [00:00<?, ?it/s]Loading weights: 100%|██████████| 199/199 [00:00<00:00, 16813.04it/s]
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+no validator                           {'has_hallucination': 0.312, 'product_grounding': 0.99, 'citation_validity': 1.0, 'numeric_grounding': 0.909, 'attempts': 1.0, 'final_valid': 0.688}
+Loading weights:   0%|          | 0/199 [00:00<?, ?it/s]Loading weights: 100%|██████████| 199/199 [00:00<00:00, 7659.46it/s]
+with validator (<=2 regenerations)     {'has_hallucination': 0.021, 'product_grounding': 1.0, 'citation_validity': 1.0, 'numeric_grounding': 0.997, 'attempts': 1.396, 'final_valid': 0.979}
+wrote /Users/fuxionist/Documents/Racer_project/racer_code/racer/results/exp4_anthropic_claude-sonnet-5-5_dense_extended.json

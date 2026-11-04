@@ -1,4 +1,4 @@
-"""Redraw paper Figs. 4, 6 and 8 from experiment results.
+"""Draw the paper's framework diagram (Fig. 1) and redraw Figs. 4, 6, 7 and 8 from experiment results.
 
 Run evaluate_cce.py, evaluate_profiling.py, racer_code/racer/experiments/exp1_finqa_retrieval.py
 and exp4_generation_hallucination.py first. Writes PNGs to figures/.
@@ -11,6 +11,7 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib.patches import FancyBboxPatch
 
 ROOT = Path(__file__).resolve().parent
 CCE_PATH = ROOT / "results" / "cce_results.json"
@@ -33,6 +34,88 @@ plt.rcParams.update({
     "font.family": "serif", "font.size": 11, "axes.spines.top": False, "axes.spines.right": False,
     "axes.grid": True, "axes.grid.axis": "y", "grid.linestyle": "--", "grid.alpha": 0.5, "axes.axisbelow": True,
 })
+
+
+def box(ax, x, y, w, h, text, face, edge=None, color="white", size=9, bold=False):
+    """Rounded box centred on (x, y)."""
+    ax.add_patch(FancyBboxPatch((x - w / 2, y - h / 2), w, h, boxstyle="round,pad=0.3,rounding_size=1.2",
+                                fc=face, ec=edge or face, lw=1.2))
+    ax.text(x, y, text, ha="center", va="center", color=color, fontsize=size,
+            fontweight="bold" if bold else "normal")
+
+
+def arrow(ax, start, end, label="", style="-|>", ls="-", color="#333", label_offset=(0, 1.4), rad=0.0):
+    ax.annotate("", end, start, arrowprops=dict(arrowstyle=style, color=color, lw=1.3, ls=ls,
+                                                shrinkA=0, shrinkB=0, connectionstyle=f"arc3,rad={rad}"))
+    if label:
+        mx, my = (start[0] + end[0]) / 2 + label_offset[0], (start[1] + end[1]) / 2 + label_offset[1]
+        ax.text(mx, my, label, ha="center", va="bottom", fontsize=9, color=color)
+
+
+def fig1() -> None:
+    """Framework diagram of the pipeline as implemented (racer_code/racer/racer/pipeline.py)."""
+    fig, ax = plt.subplots(figsize=(15, 5.6))
+    ax.set_xlim(-1, 153)
+    ax.set_ylim(-3, 55)
+    ax.axis("off")
+    ax.set_title("RACER: Regulatory-Aware Compliance-Embedded RAG Framework", fontweight="bold", fontsize=14)
+
+    modules = [
+        (26, "1. User Risk Profiling", PURPLE, ["User features $x$", "Random Forest\nclassifier",
+                                                       "Risk capacity $U_r$\n(LOW / MEDIUM / HIGH)"]),
+        (54, "2. Dual Retrieval Engine", TEAL, ["Product index\n(BM25 / TF-IDF)", "Tier boost\n$\\delta = 1.15$ if tier $= U_r$",
+                                                   "Top-20 candidates $\\mathcal{P}$"]),
+        (82, "3. Compliance Constraint\nEngine (CCE)", ORANGE, ["6 suitability checks\n$\\Lambda(U_r)$ (Table I)",
+                                                                  "Certify if $\\geq \\theta = 5$ pass\n($c_1$ risk level mandatory)",
+                                                                  "Certified set $\\mathcal{R}$\n(top 5)"]),
+        (110, "4. Regulatory-Aware\nGenerator", "#c99a06", ["Prompt: $\\mathcal{R}$, $U_r$, $\\mathcal{C}^{reg}$",
+                                                              "LLM $P_\\theta$\n(Claude Haiku 5.5)", "Draft $\\hat{r}$"]),
+        (138, "5. Post-Generation\nValidator", GREEN, ["Products $\\in \\mathcal{R}$\nand suitable",
+                                                         "Citations valid", "Numbers grounded"]),
+    ]
+    W, ROWS = 24, (35, 26.5, 18)
+    for x, title, color, steps in modules:
+        ax.add_patch(FancyBboxPatch((x - W / 2, 7), W, 38, boxstyle="round,pad=0.3,rounding_size=1.5",
+                                    fc=color + "14", ec=color, lw=1.6))
+        ax.text(x, 43, title, ha="center", va="top", fontsize=10, fontweight="bold", color=color)
+        for y, step in zip(ROWS, steps):
+            box(ax, x, y, 19, 5.2, step, color, size=8.5)
+        for y0, y1 in zip(ROWS, ROWS[1:]):
+            arrow(ax, (x, y0 - 2.9), (x, y1 + 2.9))
+
+    # Inputs and inter-module flow.
+    box(ax, 4.5, 26.5, 8, 6, "User\nquery $q$", "#222", size=9, bold=True)
+    arrow(ax, (9, 26.5), (14, 26.5))
+    labels = ["$U_r$", "$\\mathcal{P}$", "$\\mathcal{R}$", "$\\hat{r}$"]
+    for (x0, *_), (x1, *_), lab in zip(modules, modules[1:], labels):
+        arrow(ax, (x0 + 9.6, 18), (x1 - 12.3, 26.5), lab, label_offset=(-1.8, 0.2))
+    # Query also feeds both retrieval indexes: routed above the modules.
+    ax.plot([4.5, 4.5, 54], [29.8, 48.5, 48.5], ls="--", color=TEAL, lw=1.3)
+    arrow(ax, (54, 48.5), (54, 45.4), ls="--", color=TEAL)
+    ax.text(29, 49, "query $q$", ha="center", va="bottom", fontsize=9, color=TEAL)
+
+    # Clause lane: separate index, top-3 clauses straight to the generator.
+    box(ax, 54, 10.5, 19, 4.4, "Clause index $\\rightarrow$ top-3 $\\mathcal{C}^{reg}$", "#ffffff", edge=TEAL,
+        color=TEAL, size=8.5)
+    # Clauses bypass the CCE: routed below the modules into the generator.
+    ax.plot([63.8, 66, 66, 110], [10.5, 10.5, 4.5, 4.5], ls="--", color=TEAL, lw=1.3)
+    arrow(ax, (110, 4.5), (110, 6.6), ls="--", color=TEAL)
+    ax.text(88, 4, "$\\mathcal{C}^{reg}$ (clauses bypass the CCE)", ha="center", va="top", fontsize=8.5, color=TEAL)
+
+    # CCE rejections and empty set.
+    box(ax, 82, 10.5, 19, 4.4, "Rejected, with failed\nchecks logged", "#ffffff", edge=ORANGE, color=ORANGE, size=8)
+    arrow(ax, (82, 15.1), (82, 12.9), color=ORANGE)
+
+    # Validation outcome and regeneration loop back to the generator.
+    box(ax, 138, 0, 22, 4.4, "Compliant recommendation", "#222", size=9.5, bold=True)
+    arrow(ax, (138, 15.1), (138, 2.4), "pass", label_offset=(3, -1), color=GREEN)
+    arrow(ax, (138, 45.6), (110, 45.6), "fail: regenerate with feedback ($\\leq 2$)",
+          ls="--", color="#b3261e", rad=0.35, label_offset=(0, 5.6))
+    ax.text(82, -1, "$\\mathcal{R} = \\emptyset$ or validation still failing $\\rightarrow$ NO_COMPLIANT_RECOMMENDATION",
+            ha="center", va="center", fontsize=8.5, color="#b3261e", style="italic")
+
+    fig.tight_layout()
+    fig.savefig(OUT_DIR / "fig1_framework.png", dpi=250)
 
 
 def label_bars(ax, bars, fmt="{:.1f}%", size=9):
@@ -250,6 +333,7 @@ def main() -> None:
     gen = json.loads(GEN_PATH.read_text())
     prof = json.loads(PROFILING_PATH.read_text())
     OUT_DIR.mkdir(exist_ok=True)
+    fig1()
     fig4(finqa)
     fig6(cce)
     fig7(prof)

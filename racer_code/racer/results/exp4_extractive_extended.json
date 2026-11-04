@@ -1,0 +1,66 @@
+{
+  "backend": "extractive",
+  "n": 192,
+  "variants": {
+    "no validator": {
+      "has_hallucination": {
+        "mean": 0.0,
+        "lo": 0.0,
+        "hi": 0.0
+      },
+      "product_grounding": {
+        "mean": 1.0,
+        "lo": 1.0,
+        "hi": 1.0
+      },
+      "citation_validity": {
+        "mean": 1.0,
+        "lo": 1.0,
+        "hi": 1.0
+      },
+      "numeric_grounding": {
+        "mean": 1.0,
+        "lo": 1.0,
+        "hi": 1.0
+      },
+      "attempts": {
+        "mean": 1.0,
+        "lo": 1.0,
+        "hi": 1.0
+      }
+    },
+    "with validator (<=2 regenerations)": {
+      "has_hallucination": {
+        "mean": 0.0,
+        "lo": 0.0,
+        "hi": 0.0
+      },
+      "product_grounding": {
+        "mean": 1.0,
+        "lo": 1.0,
+        "hi": 1.0
+      },
+      "citation_validity": {
+        "mean": 1.0,
+        "lo": 1.0,
+        "hi": 1.0
+      },
+      "numeric_grounding": {
+        "mean": 1.0,
+        "lo": 1.0,
+        "hi": 1.0
+      },
+      "attempts": {
+        "mean": 1.0,
+        "lo": 1.0,
+        "hi": 1.0
+      }
+    }
+  },
+  "paired_validator_effect_on_hallucination": {
+    "diff": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "p": 1.0
+  }
+}

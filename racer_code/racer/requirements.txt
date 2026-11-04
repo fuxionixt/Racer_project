@@ -4,3 +4,4 @@ pandas
 scikit-learn
 pytest
 matplotlib
+sentence-transformers  # dense clause retrieval

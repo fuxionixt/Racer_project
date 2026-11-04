@@ -108,6 +108,30 @@ def test_validator_catches_each_hallucination_type():
     assert not r.ok and r.metrics["numeric_grounding"] < 1 and r.metrics["has_hallucination"]
 
 
+def test_validator_ignores_list_markers_and_grounds_clause_sources():
+    ctx = _ctx(); ctx["clauses"][0]["source"] = "SEBI IA Regulations, 2013, Reg. 17(d)"
+    text = "1. Alpha Debt Fund [P1] has risk level 2.\n2) Per [R1] (Reg. 17(d)), suitability applies."
+    r = validate(text, ctx, ["Alpha Debt Fund"])
+    assert r.ok and r.metrics["numeric_grounding"] == 1.0
+    assert not validate("1. Alpha Debt Fund [P1] costs 3 more.", ctx, ["Alpha Debt Fund"]).ok  # inline numbers still checked
+    table = "| Rank | Product |\n|---|---|\n| 1 | Alpha Debt Fund [P1] (risk 2) |"
+    assert validate(table, ctx, ["Alpha Debt Fund"]).ok
+
+
+def test_validator_matches_names_across_dash_and_ampersand_spacing():
+    ctx = {"tier": "LOW", "products": [{"name": "Quant Tax Plan- Direct Growth"}, {"name": "PGIM India Banking&PSU Debt Fund"}],
+           "clauses": []}
+    names = [p["name"] for p in ctx["products"]] + ["Other Fund"]
+    r = validate("Quant Tax Plan – Direct Growth [P1] and PGIM India Banking & PSU Debt Fund [P2].", ctx, names)
+    assert r.ok and r.metrics["product_grounding"] == 1.0
+
+
+def test_validator_keeps_negative_numbers_intact():
+    ctx = {"tier": "LOW", "products": [{"name": "Tata Overnight Fund", "sharpe": -0.3}], "clauses": []}
+    assert validate("Tata Overnight Fund [P1] has a negative Sharpe (-0.3).", ctx, ["Tata Overnight Fund"]).ok
+    assert not validate("Tata Overnight Fund [P1] has a Sharpe of 0.3.", ctx, ["Tata Overnight Fund"]).ok
+
+
 def test_regeneration_loop_repairs_hallucination():
     f = _funds(); f.loc[0, ["scheme_name", "risk_level", "category", "expense_ratio", "rating", "sd", "sharpe"]] = [
         "Alpha Debt Fund", 1.0, "Debt", 0.1, 5.0, 0.1, 5.0]

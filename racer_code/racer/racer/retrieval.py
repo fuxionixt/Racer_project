@@ -74,6 +74,27 @@ class BM25Retriever:
         return np.asarray((W @ q.T).todense()).ravel()
 
 
+class DenseRetriever:
+    """Sentence-embedding retriever (cosine similarity). Pretrained, so fit() learns nothing."""
+    name = "dense"
+
+    def __init__(self, model=config.DENSE_MODEL, query_prefix=config.DENSE_QUERY_PREFIX):
+        from sentence_transformers import SentenceTransformer  # optional dependency
+        self.model, self.prefix, self.E = SentenceTransformer(model), query_prefix, None
+
+    def fit(self, fit_texts):
+        return self
+
+    def index(self, docs):
+        self.E = self.model.encode(list(docs), normalize_embeddings=True)
+        return self
+
+    def scores(self, query: str, rows=None) -> np.ndarray:
+        q = self.model.encode([self.prefix + query], normalize_embeddings=True)[0]
+        E = self.E if rows is None else self.E[rows]
+        return E @ q
+
+
 class RRFHybrid:
     """Reciprocal rank fusion of several retrievers that share the same indexed documents."""
     name = "hybrid_rrf"

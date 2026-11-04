@@ -1,0 +1,66 @@
+{
+  "backend": "anthropic:claude-haiku-5-5",
+  "n": 192,
+  "variants": {
+    "no validator": {
+      "has_hallucination": {
+        "mean": 0.0625,
+        "lo": 0.03125,
+        "hi": 0.09895833333333333
+      },
+      "product_grounding": {
+        "mean": 0.9979166666666667,
+        "lo": 0.9947916666666666,
+        "hi": 1.0
+      },
+      "citation_validity": {
+        "mean": 1.0,
+        "lo": 1.0,
+        "hi": 1.0
+      },
+      "numeric_grounding": {
+        "mean": 0.9883854651227183,
+        "lo": 0.9754269246397639,
+        "hi": 0.9974653426742756
+      },
+      "attempts": {
+        "mean": 1.0,
+        "lo": 1.0,
+        "hi": 1.0
+      }
+    },
+    "with validator (<=2 regenerations)": {
+      "has_hallucination": {
+        "mean": 0.0,
+        "lo": 0.0,
+        "hi": 0.0
+      },
+      "product_grounding": {
+        "mean": 1.0,
+        "lo": 1.0,
+        "hi": 1.0
+      },
+      "citation_validity": {
+        "mean": 1.0,
+        "lo": 1.0,
+        "hi": 1.0
+      },
+      "numeric_grounding": {
+        "mean": 1.0,
+        "lo": 1.0,
+        "hi": 1.0
+      },
+      "attempts": {
+        "mean": 1.0416666666666667,
+        "lo": 1.015625,
+        "hi": 1.0729166666666667
+      }
+    }
+  },
+  "paired_validator_effect_on_hallucination": {
+    "diff": -0.0625,
+    "lo": -0.09895833333333333,
+    "hi": -0.03125,
+    "p": 0.0005
+  }
+}

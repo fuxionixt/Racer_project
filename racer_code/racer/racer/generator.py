@@ -1,8 +1,12 @@
 """Answer generators.  ExtractiveGenerator is deterministic (no LLM); LLM backends use urllib only."""
 from __future__ import annotations
 
+import hashlib
 import json
+import time
+import urllib.error
 import urllib.request
+from pathlib import Path
 
 
 def build_prompt(tier: str, products: list[dict], clauses: list[dict], feedback: str = "") -> str:
@@ -47,6 +51,31 @@ class ScriptedBackend:
         return r
 
 
+class CachedBackend:
+    """Wraps a backend with an append-only JSONL cache so an interrupted run resumes without re-calling the API.
+    `namespace` separates otherwise identical prompts (e.g. the with/without-validator variants)."""
+
+    def __init__(self, inner, path, namespace=""):
+        self.inner, self.path, self.ns, self.name = inner, Path(path), namespace, inner.name
+        self.last_stop = None
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        self.cache = {}
+        if self.path.exists():
+            for line in self.path.read_text().splitlines():
+                if line.strip():
+                    d = json.loads(line); self.cache[d["key"]] = (d["text"], d.get("stop"))
+
+    def generate(self, prompt: str, ctx: dict) -> str:
+        key = hashlib.sha256(f"{self.name}\x00{self.ns}\x00{prompt}".encode()).hexdigest()
+        if key not in self.cache:
+            text = self.inner.generate(prompt, ctx)
+            self.cache[key] = (text, getattr(self.inner, "last_stop", None))
+            with open(self.path, "a") as f:
+                f.write(json.dumps({"key": key, "text": text, "stop": self.cache[key][1]}) + "\n")
+        text, self.last_stop = self.cache[key]
+        return text
+
+
 class OpenAICompatBackend:
     """Any OpenAI-compatible /chat/completions endpoint (OpenAI, vLLM, Ollama, ...)."""
 
@@ -68,6 +97,7 @@ class AnthropicBackend:
     def __init__(self, api_key, model, max_tokens=600, temperature=None, timeout=120,
                  base_url="https://api.anthropic.com"):
         self.url, self.key, self.model = base_url.rstrip("/") + "/v1/messages", api_key, model
+        self.last_stop = None
         self.max_tokens, self.temperature, self.timeout, self.name = max_tokens, temperature, timeout, f"anthropic:{model}"
 
     def generate(self, prompt: str, ctx: dict) -> str:
@@ -78,5 +108,17 @@ class AnthropicBackend:
         body = json.dumps(payload).encode()
         req = urllib.request.Request(self.url, body, {"Content-Type": "application/json", "x-api-key": self.key,
                                                       "anthropic-version": "2023-06-01"})
-        with urllib.request.urlopen(req, timeout=self.timeout) as r:
-            return "".join(b.get("text", "") for b in json.load(r)["content"])
+        for attempt in range(5):  # retry rate limits / overload / server errors with backoff
+            try:
+                with urllib.request.urlopen(req, timeout=self.timeout) as r:
+                    d = json.load(r)
+                self.last_stop = d.get("stop_reason")  # "max_tokens" means the answer was cut off
+                return "".join(b.get("text", "") for b in d["content"])
+            except urllib.error.HTTPError as e:
+                if e.code not in (429, 500, 502, 503, 529) or attempt == 4:
+                    raise
+                time.sleep(2 ** attempt * 5)
+            except (urllib.error.URLError, ConnectionError, TimeoutError):  # dropped connections
+                if attempt == 4:
+                    raise
+                time.sleep(2 ** attempt * 5)

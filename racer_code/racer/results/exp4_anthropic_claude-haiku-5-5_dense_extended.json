@@ -1,0 +1,77 @@
+{
+  "backend": "anthropic:claude-haiku-5-5",
+  "clause_retriever": "dense",
+  "n": 192,
+  "variants": {
+    "no validator": {
+      "has_hallucination": {
+        "mean": 0.03125,
+        "lo": 0.010416666666666666,
+        "hi": 0.057291666666666664
+      },
+      "product_grounding": {
+        "mean": 0.9895833333333334,
+        "lo": 0.9739583333333334,
+        "hi": 1.0
+      },
+      "citation_validity": {
+        "mean": 1.0,
+        "lo": 1.0,
+        "hi": 1.0
+      },
+      "numeric_grounding": {
+        "mean": 0.9950706845238096,
+        "lo": 0.98828125,
+        "hi": 0.9996279761904763
+      },
+      "attempts": {
+        "mean": 1.0,
+        "lo": 1.0,
+        "hi": 1.0
+      },
+      "final_valid": {
+        "mean": 0.96875,
+        "lo": 0.9427083333333334,
+        "hi": 0.9895833333333334
+      }
+    },
+    "with validator (<=2 regenerations)": {
+      "has_hallucination": {
+        "mean": 0.0,
+        "lo": 0.0,
+        "hi": 0.0
+      },
+      "product_grounding": {
+        "mean": 1.0,
+        "lo": 1.0,
+        "hi": 1.0
+      },
+      "citation_validity": {
+        "mean": 1.0,
+        "lo": 1.0,
+        "hi": 1.0
+      },
+      "numeric_grounding": {
+        "mean": 1.0,
+        "lo": 1.0,
+        "hi": 1.0
+      },
+      "attempts": {
+        "mean": 1.015625,
+        "lo": 1.0,
+        "hi": 1.0364583333333333
+      },
+      "final_valid": {
+        "mean": 1.0,
+        "lo": 1.0,
+        "hi": 1.0
+      }
+    }
+  },
+  "paired_validator_effect_on_hallucination": {
+    "diff": -0.03125,
+    "lo": -0.057291666666666664,
+    "hi": -0.010416666666666666,
+    "p": 0.011
+  }
+}

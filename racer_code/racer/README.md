@@ -2,7 +2,7 @@
 
 ```
 pip install -r requirements.txt
-python -m pytest -q tests                      # 18 tests
+python -m pytest -q tests                      # 21 tests
 ```
 
 ## What is already run (real data)

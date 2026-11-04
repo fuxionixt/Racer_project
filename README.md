@@ -28,10 +28,31 @@ python -c "import kagglehub, shutil; p = kagglehub.dataset_download('berkereryil
 python evaluate_cce.py         # suitability filtering on Mutual Funds India -> results/cce_results.json
 python evaluate_fund_risk.py   # risk_level leakage check on Mutual Funds India -> results/fund_risk_results.json
 python evaluate_profiling.py   # user risk profiling on Financial Risk Dataset -> results/profiling_results.json
-python make_figures.py         # paper Figs. 4, 6, 7 and 8 -> figures/
+python make_figures.py         # paper Fig. 1 (framework) and Figs. 4, 6, 7 and 8 -> figures/
 ```
 
 `make_figures.py` also reads the FinQA and generation results in `racer_code/racer/results/`.
+
+The pipeline experiments live in `racer_code/racer/experiments/` (FinQA files go in `racer_code/racer/data/finqa/`, the fund CSV in `racer_code/racer/data/funds/funds.csv`):
+
+```bash
+cd racer_code/racer/experiments
+python exp1_finqa_retrieval.py                 # FinQA supporting-fact retrieval
+python exp5_prefilter_vs_posthoc.py            # filtering depth (5/10/20) and tier-boost ablation (192 cases, no LLM)
+python exp6_clause_retrieval.py                # BM25 vs TF-IDF vs dense retrieval over the SEBI clauses
+python exp4_generation_hallucination.py --backend anthropic --model claude-sonnet-5-5 --queries extended \
+    --n 192 --clause_retriever dense --max_tokens 2048
+                                               # generation with/without validator (needs ANTHROPIC_API_KEY)
+```
+
+The regulatory index uses `racer_code/racer/data/regulatory/clauses.jsonl`: 16 clauses copied verbatim from the
+SEBI (Investment Advisers) Regulations, 2013, as amended up to 25 Nov 2025 (sebi.gov.in). Dense retrieval downloads
+`BAAI/bge-small-en-v1.5` on first use. Model responses are cached in `racer_code/racer/results/cache/`, so rerunning
+exp4 re-scores the saved answers without new API calls.
+
+Results behind the paper's generation table: `exp4_anthropic_claude-sonnet-5-5_dense_mt2048_extended.json`.
+The other `exp4_*` files are earlier configurations (600-token limit, BM25 clauses, Claude Haiku 5.5) kept for the record;
+most of their 600-token answers were truncated.
 
 ## Setup
 

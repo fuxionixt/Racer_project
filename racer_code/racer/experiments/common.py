@@ -9,6 +9,28 @@ from racer.data import load_funds, load_profiles, synth_funds, synth_profiles, l
 QUERIES = ["long term wealth creation", "stable regular income", "tax saving investment", "retirement planning",
            "short term parking of surplus cash", "diversified portfolio growth", "low cost index fund", "capital protection"]
 
+# 64 investor queries (the 8 above plus 56 more) for the larger generation and filtering experiments.
+EXTENDED_QUERIES = QUERIES + [
+    "child education fund in ten years", "monthly SIP for a first-time investor", "emergency fund with easy withdrawal",
+    "high growth small cap exposure", "large cap blue chip stability", "balanced fund for moderate risk",
+    "debt fund with low volatility", "liquid fund for three months", "gilt fund for interest rate gains",
+    "corporate bond fund with good rating", "hybrid fund for a conservative retiree", "aggressive equity for young investor",
+    "sector fund in technology", "banking and financial services fund", "infrastructure growth fund",
+    "pharma and healthcare fund", "international equity diversification", "dividend yield income fund",
+    "value investing fund", "flexi cap fund with low expense ratio", "mid cap fund with strong Sharpe ratio",
+    "ELSS with three year lock in", "fund with highest rating and low cost", "low risk fund for senior citizen",
+    "inflation beating returns over five years", "short duration debt for one year", "ultra short term fund for parking bonus",
+    "overnight fund for treasury cash", "arbitrage fund for low tax", "multi asset allocation fund",
+    "dynamic asset allocation fund", "equity savings fund", "credit risk fund with higher yield",
+    "money market fund", "floater fund for rising rates", "banking and PSU debt fund",
+    "index fund tracking Nifty 50", "fund for a house down payment in three years", "wedding expenses in two years",
+    "fund for a car purchase next year", "long term pension planning", "fund with consistent five year returns",
+    "low beta defensive fund", "fund with small drawdowns", "focused fund with concentrated portfolio",
+    "contra investing fund", "ESG sustainable investing fund", "fund for NRI investor",
+    "quarterly income for expenses", "surplus bonus investment for growth", "first investment with small amount",
+    "low minimum SIP amount fund", "tax efficient debt fund", "fund manager with long track record",
+    "fund with large assets under management", "safe fund for unemployed period"]
+
 def parser(desc):
     ap = argparse.ArgumentParser(description=desc)
     ap.add_argument("--funds", default=str(config.DATA_DIR / "funds" / "funds.csv"))

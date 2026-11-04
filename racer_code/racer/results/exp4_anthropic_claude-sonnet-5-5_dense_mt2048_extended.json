@@ -1,0 +1,88 @@
+{
+  "backend": "anthropic:claude-sonnet-5-5",
+  "clause_retriever": "dense",
+  "max_tokens": 2048,
+  "n": 192,
+  "variants": {
+    "no validator": {
+      "has_hallucination": {
+        "mean": 0.0625,
+        "lo": 0.03125,
+        "hi": 0.09895833333333333
+      },
+      "product_grounding": {
+        "mean": 0.9991319444444445,
+        "lo": 0.9973958333333334,
+        "hi": 1.0
+      },
+      "citation_validity": {
+        "mean": 1.0,
+        "lo": 1.0,
+        "hi": 1.0
+      },
+      "numeric_grounding": {
+        "mean": 0.9965386142023123,
+        "lo": 0.9940439677404449,
+        "hi": 0.9985390189211459
+      },
+      "attempts": {
+        "mean": 1.0,
+        "lo": 1.0,
+        "hi": 1.0
+      },
+      "final_valid": {
+        "mean": 0.9375,
+        "lo": 0.9010416666666666,
+        "hi": 0.96875
+      },
+      "truncated": {
+        "mean": 0.0,
+        "lo": 0.0,
+        "hi": 0.0
+      }
+    },
+    "with validator (<=2 regenerations)": {
+      "has_hallucination": {
+        "mean": 0.005208333333333333,
+        "lo": 0.0,
+        "hi": 0.015625
+      },
+      "product_grounding": {
+        "mean": 1.0,
+        "lo": 1.0,
+        "hi": 1.0
+      },
+      "citation_validity": {
+        "mean": 1.0,
+        "lo": 1.0,
+        "hi": 1.0
+      },
+      "numeric_grounding": {
+        "mean": 0.9996936274509803,
+        "lo": 0.9990808823529411,
+        "hi": 1.0
+      },
+      "attempts": {
+        "mean": 1.0625,
+        "lo": 1.0260416666666667,
+        "hi": 1.0989583333333333
+      },
+      "final_valid": {
+        "mean": 0.9947916666666666,
+        "lo": 0.984375,
+        "hi": 1.0
+      },
+      "truncated": {
+        "mean": 0.0,
+        "lo": 0.0,
+        "hi": 0.0
+      }
+    }
+  },
+  "paired_validator_effect_on_hallucination": {
+    "diff": -0.057291666666666664,
+    "lo": -0.09375,
+    "hi": -0.026041666666666668,
+    "p": 0.0005
+  }
+}

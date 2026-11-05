@@ -1,5 +1,6 @@
 {
   "n_cases": 192,
+  "corpus": "clauses",
   "n_clauses": 16,
   "variants": {
     "bm25": {

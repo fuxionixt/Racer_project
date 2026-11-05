@@ -63,13 +63,13 @@ def fig1() -> None:
     modules = [
         (26, "1. User Risk Profiling", PURPLE, ["User features $x$", "Random Forest\nclassifier",
                                                        "Risk capacity $U_r$\n(LOW / MEDIUM / HIGH)"]),
-        (54, "2. Dual Retrieval Engine", TEAL, ["Product index\n(BM25 / TF-IDF)", "Tier boost\n$\\delta = 1.15$ if tier $= U_r$",
+        (54, "2. Dual Retrieval Engine", TEAL, ["Product index\n(BM25)", "Tier boost\n$\\delta = 1.15$ if tier $= U_r$",
                                                    "Top-20 candidates $\\mathcal{P}$"]),
         (82, "3. Compliance Constraint\nEngine (CCE)", ORANGE, ["6 suitability checks\n$\\Lambda(U_r)$ (Table I)",
                                                                   "Certify if $\\geq \\theta = 5$ pass\n($c_1$ risk level mandatory)",
                                                                   "Certified set $\\mathcal{R}$\n(top 5)"]),
         (110, "4. Regulatory-Aware\nGenerator", "#c99a06", ["Prompt: $\\mathcal{R}$, $U_r$, $\\mathcal{C}^{reg}$",
-                                                              "LLM $P_\\theta$\n(Claude Haiku 5.5)", "Draft $\\hat{r}$"]),
+                                                              "LLM $P_\\theta$\n(Claude Sonnet 5.5)", "Draft $\\hat{r}$"]),
         (138, "5. Post-Generation\nValidator", GREEN, ["Products $\\in \\mathcal{R}$\nand suitable",
                                                          "Citations valid", "Numbers grounded"]),
     ]
@@ -95,7 +95,7 @@ def fig1() -> None:
     ax.text(29, 49, "query $q$", ha="center", va="bottom", fontsize=9, color=TEAL)
 
     # Clause lane: separate index, top-3 clauses straight to the generator.
-    box(ax, 54, 10.5, 19, 4.4, "Clause index $\\rightarrow$ top-3 $\\mathcal{C}^{reg}$", "#ffffff", edge=TEAL,
+    box(ax, 54, 10.5, 19, 4.4, "Clauses (dense) $\\rightarrow$ top-3 $\\mathcal{C}^{reg}$", "#ffffff", edge=TEAL,
         color=TEAL, size=8.5)
     # Clauses bypass the CCE: routed below the modules into the generator.
     ax.plot([63.8, 66, 66, 110], [10.5, 10.5, 4.5, 4.5], ls="--", color=TEAL, lw=1.3)

@@ -1,0 +1,131 @@
+{
+  "n_cases": 192,
+  "corpus": "sebi_full",
+  "n_clauses": 322,
+  "variants": {
+    "bm25": {
+      "reg17_in_top3": {
+        "mean": 0.03125,
+        "lo": 0.010416666666666666,
+        "hi": 0.057291666666666664
+      },
+      "reg17a_in_top3": {
+        "mean": 0.0,
+        "lo": 0.0,
+        "hi": 0.0
+      },
+      "reg19_in_top3": {
+        "mean": 0.0,
+        "lo": 0.0,
+        "hi": 0.0
+      }
+    },
+    "tfidf": {
+      "reg17_in_top3": {
+        "mean": 0.036458333333333336,
+        "lo": 0.010416666666666666,
+        "hi": 0.06770833333333333
+      },
+      "reg17a_in_top3": {
+        "mean": 0.0,
+        "lo": 0.0,
+        "hi": 0.0
+      },
+      "reg19_in_top3": {
+        "mean": 0.0,
+        "lo": 0.0,
+        "hi": 0.0
+      }
+    },
+    "dense": {
+      "reg17_in_top3": {
+        "mean": 0.8802083333333334,
+        "lo": 0.8333333333333334,
+        "hi": 0.921875
+      },
+      "reg17a_in_top3": {
+        "mean": 0.0,
+        "lo": 0.0,
+        "hi": 0.0
+      },
+      "reg19_in_top3": {
+        "mean": 0.0,
+        "lo": 0.0,
+        "hi": 0.0
+      }
+    }
+  },
+  "clause_counts": {
+    "bm25": {
+      "SEBI-MC26-1": 99,
+      "SEBI-MC11-1": 80,
+      "SEBI-MC1-34": 75,
+      "SEBI-MC2-1": 73,
+      "SEBI-MC8-16": 58,
+      "SEBI-MC13-1": 37,
+      "SEBI-MC9-7": 15,
+      "SEBI-MC1-35": 12,
+      "SEBI-MC1-25": 9,
+      "SEBI-MC8-9": 8,
+      "SEBI-IA-2(1-5)": 7,
+      "SEBI-IA-16(a)": 6,
+      "SEBI-IA-4(g)": 6,
+      "SEBI-MC1-11": 6,
+      "SEBI-MC10-6": 6
+    },
+    "tfidf": {
+      "SEBI-MC11-1": 121,
+      "SEBI-MC8-13-2": 66,
+      "SEBI-MC8-16": 63,
+      "SEBI-MC26-1": 59,
+      "SEBI-IA-4(h)": 48,
+      "SEBI-MC2-1": 28,
+      "SEBI-MC1-34": 26,
+      "SEBI-IA-16(e)": 17,
+      "SEBI-MC9-7": 12,
+      "SEBI-IA-13(d)": 11,
+      "SEBI-MC1-25": 8,
+      "SEBI-MC13-1": 7,
+      "SEBI-IA-2(1-5)": 7,
+      "SEBI-IA-16(a)": 6,
+      "SEBI-IA-4(g)": 6
+    },
+    "dense": {
+      "SEBI-IA-17(d)": 169,
+      "SEBI-MC2-5": 92,
+      "SEBI-IA-17(e)": 55,
+      "SEBI-MC10-6": 26,
+      "SEBI-MC8-19": 25,
+      "SEBI-MC8-18": 24,
+      "SEBI-MC1-35": 23,
+      "SEBI-MC8-9": 14,
+      "SEBI-MC6-8": 11,
+      "SEBI-MC25-5": 8,
+      "SEBI-MC1-10": 8,
+      "SEBI-IA-16(d)": 7,
+      "SEBI-MC26-1": 7,
+      "SEBI-MC5-1": 7,
+      "SEBI-MC25-6": 7
+    }
+  },
+  "paired_dense_minus_bm25": {
+    "reg17_in_top3": {
+      "diff": 0.8489583333333334,
+      "lo": 0.796875,
+      "hi": 0.9010416666666666,
+      "p": 0.0005
+    },
+    "reg17a_in_top3": {
+      "diff": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "p": 1.0
+    },
+    "reg19_in_top3": {
+      "diff": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "p": 1.0
+    }
+  }
+}

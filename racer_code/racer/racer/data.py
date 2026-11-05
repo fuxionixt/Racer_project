@@ -151,7 +151,8 @@ def load_regulatory(path: Path | str) -> list[dict]:
     for line in Path(path).read_text().splitlines():
         if line.strip():
             d = json.loads(line)
-            out.append({"id": d["id"], "source": d.get("source", ""), "text": d["text"]})
+            out.append({"id": d["id"], "source": d.get("source", ""), "text": d["text"],
+                        **{k: d[k] for k in ("reg", "sub") if k in d}})
     return out
 
 

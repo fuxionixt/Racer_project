@@ -10,3 +10,6 @@ racer_code/racer/data/
 racer_code/racer/paper/
 racer_code/racer/CHANGES.md
 *.pdf
+
+# Annotation answer key: never share with annotators
+racer_code/racer/annotation/key/
